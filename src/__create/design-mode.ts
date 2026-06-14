@@ -61,12 +61,12 @@ function extractComputedStyles(el: HTMLElement): Record<string, string> {
   };
 }
 
-const getStyleInfo: GetStyleInfo = (resolved) => {
+const getStyleInfo = ((resolved: any) => {
   const el = resolved.element;
   const className = el instanceof HTMLElement ? el.className : '';
   const styles = el instanceof HTMLElement ? extractComputedStyles(el) : null;
   return { className, styles };
-};
+}) as unknown as GetStyleInfo;
 
 const reselect = initDesignMode(getStyleInfo);
 
@@ -74,6 +74,8 @@ const reselect = initDesignMode(getStyleInfo);
 // so the design panel stays in sync.
 if (import.meta.hot) {
   import.meta.hot.on('vite:afterUpdate', () => {
-    reselect();
+    if (typeof reselect === 'function') {
+      (reselect as Function)();
+    }
   });
 }

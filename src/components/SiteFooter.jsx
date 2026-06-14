@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Mail, Globe, ArrowRight, Phone } from "lucide-react";
+import { Mail, Globe, ArrowRight } from "lucide-react";
 
 const LOGO =
   "https://dtvoeevhaseb5.cloudfront.net/user-uploads/40e84918-95a6-41a8-9d9f-4272e6a4fde8.jpg";

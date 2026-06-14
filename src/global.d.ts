@@ -15,3 +15,8 @@ declare module '@auth/create/react' {
 	import { SessionProvider } from '@auth/react';
 	export { SessionProvider };
 }
+
+declare module "*.jsx" {
+  const value: any;
+  export default value;
+}

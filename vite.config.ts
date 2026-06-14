@@ -15,6 +15,21 @@ import { restartEnvFileChange } from './plugins/restartEnvFileChange';
 
 const isStatic = process.env.npm_lifecycle_event === 'build:static';
 
+function onwarn(warning: { code?: string; message?: string }, warn: (warning: unknown) => void) {
+  if (warning.code === 'SOURCEMAP_ERROR') {
+    return;
+  }
+
+  if (
+    warning.message?.includes('DoesNotExist') ||
+    warning.message?.includes('not exported by')
+  ) {
+    return;
+  }
+
+  warn(warning);
+}
+
 export default defineConfig({
   // Keep them available via import.meta.env.NEXT_PUBLIC_*
   envPrefix: 'NEXT_PUBLIC_',
@@ -104,5 +119,9 @@ export default defineConfig({
   // Ensure the build outputs target modern JS to avoid heavy transforms
   build: {
     target: 'es2022',
+    sourcemap: false,
+    rollupOptions: {
+      onwarn,
+    },
   },
 });
