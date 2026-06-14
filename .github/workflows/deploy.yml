@@ -1,0 +1,51 @@
+name: Build and Deploy to Hostinger
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: |
+          cd web
+          npm ci
+
+      - name: Build web
+        run: |
+          cd web
+          npm run build
+
+      - name: Show build output (for debugging)
+        run: |
+          if [ -d "web/build/client" ]; then ls -la web/build/client; fi
+          if [ -d "web/dist" ]; then ls -la web/dist; fi
+
+      - name: Determine upload directory
+        id: choose-dir
+        run: |
+          if [ -d "web/build/client" ]; then echo "UPLOAD_DIR=web/build/client" >> $GITHUB_ENV; fi
+          if [ -d "web/dist" ]; then echo "UPLOAD_DIR=web/dist" >> $GITHUB_ENV; fi
+          if [ -z "${UPLOAD_DIR}" ]; then echo "UPLOAD_DIR=web/build/client" >> $GITHUB_ENV; fi
+        shell: bash
+
+      - name: Deploy to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          local-dir: ${{ env.UPLOAD_DIR }}
+          server-dir: /public_html

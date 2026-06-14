@@ -13,6 +13,8 @@ import { nextPublicProcessEnv } from './plugins/nextPublicProcessEnv';
 import { restart } from './plugins/restart';
 import { restartEnvFileChange } from './plugins/restartEnvFileChange';
 
+const isStatic = process.env.npm_lifecycle_event === 'build:static';
+
 export default defineConfig({
   // Keep them available via import.meta.env.NEXT_PUBLIC_*
   envPrefix: 'NEXT_PUBLIC_',
@@ -30,12 +32,17 @@ export default defineConfig({
       'fsevents',
       'lightningcss',
     ],
+    // Prevent esbuild from attempting unsupported transforms on modern deps
+    esbuildOptions: {
+      target: 'es2022',
+    },
   },
-  logLevel: 'info',
+  logLevel: 'warn',
   plugins: [
     nextPublicProcessEnv(),
     restartEnvFileChange(),
-    reactRouterHonoServer({
+    // Only include server/SSR plugins for non-static builds
+    !isStatic && reactRouterHonoServer({
       serverEntryPoint: './__create/index.ts',
       runtime: 'node',
     }),
@@ -45,6 +52,7 @@ export default defineConfig({
       babelConfig: {
         babelrc: false, // don’t merge other Babel files
         configFile: false,
+        presets: [['@babel/preset-react', { runtime: 'automatic' }], '@babel/preset-typescript'],
         plugins: ['styled-jsx/babel'],
       },
     }),
@@ -61,11 +69,12 @@ export default defineConfig({
     consoleToParent(),
     loadFontsFromTailwindSource(),
     addRenderIds(),
-    reactRouter(),
+    // react-router dev plugin is heavy (builds server bundles). Skip it for static builds.
+    !isStatic && reactRouter(),
     tsconfigPaths(),
     aliases(),
     layoutWrapperPlugin(),
-  ],
+  ].filter(Boolean),
   resolve: {
     alias: {
       lodash: 'lodash-es',
@@ -91,5 +100,9 @@ export default defineConfig({
     warmup: {
       clientFiles: ['./src/app/**/*', './src/app/root.tsx', './src/app/routes.ts'],
     },
+  },
+  // Ensure the build outputs target modern JS to avoid heavy transforms
+  build: {
+    target: 'es2022',
   },
 });
