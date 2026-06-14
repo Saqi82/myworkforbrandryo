@@ -1,20 +1,25 @@
-import fg from 'fast-glob';
 import type { Route } from './+types/not-found';
 import { useNavigate } from 'react-router';
 import { useCallback, useEffect, useState } from 'react';
 
-export async function loader({ params }: Route.LoaderArgs) {
-  const matches = await fg('src/**/page.{js,jsx,ts,tsx}');
+// ✅ 1. Changed to clientLoader and removed the 'fast-glob' server file-scanner
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   return {
     path: `/${params['*']}`,
-    pages: matches
-      .sort((a, b) => a.length - b.length)
-      .map((match) => {
-        const url = match.replace('src/app', '').replace(/\/page\.(js|jsx|ts|tsx)$/, '') || '/';
-        const path = url.replaceAll('[', '').replaceAll(']', '');
-        const displayPath = path === '/' ? 'Homepage' : path;
-        return { url, path: displayPath };
-      }),
+    // Since browser code cannot read your hard drive files dynamically,
+    // we fallback to your router context layout structure safely.
+    pages: [
+      { url: '/', path: 'Homepage' },
+      { url: '/about', path: '/about' },
+      { url: '/services', path: '/services' },
+      { url: '/consultancy', path: '/consultancy' },
+      { url: '/email-marketing', path: '/email-marketing' },
+      { url: '/get-more-customers', path: '/get-more-customers' },
+      { url: '/get-more-leads', path: '/get-more-leads' },
+      { url: '/google-ads-management', path: '/google-ads-management' },
+      { url: '/grow-sales-online', path: '/grow-sales-online' },
+      { url: '/insights', path: '/insights' }
+    ],
   };
 }
 
@@ -27,10 +32,11 @@ interface ParentSitemap {
   }>;
 }
 
+// ✅ 2. Linked component typing to Awaited<ReturnType<typeof clientLoader>>
 export default function CreateDefaultNotFoundPage({
   loaderData,
 }: {
-  loaderData: Awaited<ReturnType<typeof loader>>;
+  loaderData: Awaited<ReturnType<typeof clientLoader>>;
 }) {
   const [siteMap, setSitemap] = useState<ParentSitemap | null>(null);
   const navigate = useNavigate();
